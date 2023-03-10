@@ -99,9 +99,9 @@
       <el-table-column label="产品名称" align="center" prop="productName" />
       <el-table-column label="产品负责人" align="center" prop="productPrincipalName" />
       <el-table-column label="测试负责人" align="center" prop="testPrincipalName" />
-      <el-table-column label="研发需求完成率" align="center" prop="" />
-      <el-table-column label="bug" align="center" prop="" />
-      <el-table-column label="计划" align="center" prop="" />
+      <el-table-column label="研发需求完成率(%)" align="center" prop="productRequireFinishRate" />
+      <el-table-column label="bug(个)" align="center" prop="productBugNumber" />
+      <el-table-column label="计划(个)" align="center" prop="productPlanNumber" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -203,6 +203,7 @@
 import { listProduct, getProduct, delProduct, addProduct, updateProduct } from "@/api/system/product";
 import { listItem_set } from '@/api/system/item_set'
 import { listUser } from '@/api/system/user'
+import { listBug } from '@/api/system/bug'
 
 export default {
   name: "Product",
@@ -246,22 +247,26 @@ export default {
       item_setList: [],
       // 表单参数
       form: {},
+      queryParamsBugList:{},
+      bugList:[],
       // 表单校验
       rules: {
       }
     };
   },
   created() {
+    // this.queryParamsBugList.productId
     this.getList();
     this.getItem_set()
     this.getUserList()
   },
   methods: {
     /** 查询产品列表列表 */
-    getList() {
+    async getList() {
       this.loading = true;
-      listProduct(this.queryParams).then(response => {
+      await listProduct(this.queryParams).then(response => {
         this.productList = response.rows;
+        console.log(this.productList)
         this.total = response.total;
         this.loading = false;
       });
@@ -277,9 +282,13 @@ export default {
       listUser(this.queryParamsUserList).then(response => {
           this.userList = response.rows;
           console.log(this.userList)
+
         }
       );
     },
+    // getProductBug(){
+
+    // },
 
     upPlan(row){
       const proId = row.productId;

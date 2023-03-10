@@ -137,6 +137,36 @@ export const dynamicRoutes = [
       }
     ]
   },
+  //产品测试列表到测试用例特定路由
+  {
+    path: '/productTest/toProductTestExample',
+    component: Layout,
+    hidden: true,
+    permissions: ['system:user:edit'],
+    children: [
+      {
+        path: ':proId(\\d+)',
+        component: () => import('@/views/system/productTestStep/index'),
+        name: 'AuthRole',
+        meta: { title: '产品测试用例', activeMenu: 'system/productTestStep' }
+      }
+    ]
+  },
+  //产品测试列表到转bug路由
+  {
+    path: '/productTest/toProductBug',
+    component: Layout,
+    hidden: true,
+    permissions: ['system:user:edit'],
+    children: [
+      {
+        path: ':proId(\\d+)',
+        component: () => import('@/views/system/productBug/index'),
+        name: 'AuthRole',
+        meta: { title: '产品bug', activeMenu: 'system/productBug' }
+      }
+    ]
+  },
   {
     path: '/system/user-auth',
     component: Layout,
