@@ -92,6 +92,51 @@ export const constantRoutes = [
 
 // 动态路由，基于用户权限动态去加载
 export const dynamicRoutes = [
+  //产品计划特定路由
+  {
+    path: '/product/productPlanOne',
+    component: Layout,
+    hidden: true,
+    permissions: ['system:user:edit'],
+    children: [
+      {
+        path: ':proId(\\d+)',
+        component: () => import('@/views/system/productPlanOne/index'),
+        name: 'AuthRole',
+        meta: { title: '产品计划', activeMenu: '/system/productPlanOne' }
+      }
+    ]
+  },
+  //产品需求特定路由
+  {
+    path: '/product/productNeedOne',
+    component: Layout,
+    hidden: true,
+    permissions: ['system:user:edit'],
+    children: [
+      {
+        path: ':proId(\\d+)',
+        component: () => import('@/views/system/productNeedOne/index'),
+        name: 'AuthRole',
+        meta: { title: '产品需求', activeMenu: 'system/productNeedOne' }
+      }
+    ]
+  },
+  //执行到任务特定路由
+  {
+    path: '/execute/exeToTask',
+    component: Layout,
+    hidden: true,
+    permissions: ['system:user:edit'],
+    children: [
+      {
+        path: ':exeId(\\d+)',
+        component: () => import('@/views/system/exeToTask/index'),
+        name: 'AuthRole',
+        meta: { title: '任务分解', activeMenu: 'system/exeToTask' }
+      }
+    ]
+  },
   {
     path: '/system/user-auth',
     component: Layout,

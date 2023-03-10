@@ -107,6 +107,20 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-delete"
+            @click="upPlan(scope.row)"
+            v-hasPermi="['system:product:remove']"
+          >计划</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-delete"
+            @click="upNeed(scope.row)"
+            v-hasPermi="['system:product:remove']"
+          >需求</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:product:edit']"
@@ -266,6 +280,17 @@ export default {
         }
       );
     },
+
+    upPlan(row){
+      const proId = row.productId;
+      this.$router.push('/product/productPlanOne/'+proId)
+    },
+
+    upNeed(row){
+      const proId = row.productId;
+      this.$router.push('/product/productNeedOne/'+proId)
+    },
+
     // 取消按钮
     cancel() {
       this.open = false;

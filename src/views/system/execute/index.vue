@@ -89,6 +89,7 @@
       <el-table-column type="selection" width="55" align="center" />
 <!--      <el-table-column label="执行id" align="center" prop="executeId" />-->
       <el-table-column label="所属项目" align="center" prop="itemName" />
+      <el-table-column label="对应需求" align="center" prop="productRequirementName" />
       <el-table-column label="执行名称" align="center" prop="executeName" />
       <el-table-column label="执行代号" align="center" prop="executeCode" />
       <el-table-column label="开始时间" align="center" prop="startTime" width="180">
@@ -116,6 +117,13 @@
 <!--      </el-table-column>-->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-edit"
+            @click="toMakeTask(scope.row)"
+            v-hasPermi="['system:execute:edit']"
+          >分解执行任务</el-button>
           <el-button
             size="mini"
             type="text"
@@ -211,6 +219,18 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="关联需求" prop="relateRequireId">
+          <!--          <el-input v-model="form.relatedPlanId" placeholder="请输入执行代号" />-->
+          <el-select v-model="form.relateRequireId" placeholder="请选择关联产品">
+            <el-option
+              v-for="item in requirementList"
+              :key="item.productRequirementId"
+              :label="item.requirementName"
+              :value="item.productRequirementId">
+            </el-option>
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="产品负责人" prop="productPrincipalId">
 <!--          <el-input v-model="form.productPrincipalId" placeholder="请输入执行代号" />-->
           <el-select v-model="form.productPrincipalId" placeholder="请选择产品负责人">
@@ -273,6 +293,8 @@ import { listItem } from '@/api/system/item'
 import { listProduct } from '@/api/system/product'
 import { listPlan } from '@/api/system/plan'
 import { listUser } from '@/api/system/user'
+import { addExe } from '@/api/system/exe'
+import { listRequirement } from '@/api/system/requirement'
 
 export default {
   name: "Execute",
@@ -323,8 +345,11 @@ export default {
       planList:[],
       queryParamsUserList:{},
       userList:[],
+      queryParamsRequireList:{},
+      requirementList:[],
       // 表单参数
       form: {},
+      addUserForm:{},
       // 表单校验
       rules: {
       }
@@ -336,6 +361,7 @@ export default {
     this.getProductList();
     this.getPlanList();
     this.getUserList();
+    this.getRequireList()
   },
   methods: {
     /** 查询执行列表列表 */
@@ -373,6 +399,27 @@ export default {
           console.log(this.userList)
         }
       );
+    },
+    getRequireList(){
+      listRequirement(this.queryParamsRequireList).then(response => {
+        this.requirementList = response.rows;
+      });
+    },
+
+    addGroupMembers(){
+      const memberIds = this.form.teamMembersIds
+      const list  = memberIds.split(',')
+      console.log(list)
+      for (let i = 0; i < list.length; i++) {
+        addExe(this.addUserForm).then(response => {
+          this.$modal.msgSuccess("新增成功");
+        });
+      }
+    },
+    //执行的任务分解
+    toMakeTask(row){
+      const exeId = row.executeId;
+      this.$router.push('/execute/exeToTask/'+exeId)
     },
     // 取消按钮
     cancel() {
@@ -444,11 +491,12 @@ export default {
               this.getList();
             });
           } else {
-            addExecute(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
+            this.addGroupMembers()
+            // addExecute(this.form).then(response => {
+            //   this.$modal.msgSuccess("新增成功");
+            //   this.open = false;
+            //   this.getList();
+            // });
           }
         }
       });
