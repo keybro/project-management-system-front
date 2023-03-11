@@ -195,6 +195,13 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-folder-delete"
+            @click="closeRequire(scope.row)"
+            v-hasPermi="['system:requirement:edit']"
+          >关闭</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:requirement:edit']"
@@ -442,6 +449,29 @@ export default {
       this.designateForm.productRequirementId = id;
       console.log(this.rowId)
     },
+    /** 关闭需求*/
+    closeRequire(row){
+      this.$confirm('是否确定关闭该需求', '关闭确定', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.form.productRequirementId = row.productRequirementId;
+        this.form.stage = 3
+        updateRequirement(this.form).then(response => {
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: '关闭成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消关闭'
+        });
+      });
+    },
 
     /** 点击确定指派以后执行的更新方法*/
     makeSureDesignate(){
@@ -449,6 +479,10 @@ export default {
       getUser(this.designateForm.designateUserId).then(resp =>{
         this.designateForm.designateUserName = resp.data.nickName
         console.log(this.designateForm)
+        //设置需求列表阶段为进行中
+        this.designateForm.stage = 1;
+        //设置需求列表状态为已激活
+        this.designateForm.status = 1
         updateRequirement(this.designateForm).then(response => {
           this.$modal.msgSuccess("指派成功！");
           this.designateDialog = false;

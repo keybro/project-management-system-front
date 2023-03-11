@@ -125,8 +125,8 @@
       <el-table-column label="关联计划" align="center" prop="relatedPlanName" />
       <el-table-column label="实际开始时间" align="center" prop="actualStartTime">
         <template slot-scope="scope">
-          <span v-if="scope.row.actualStartTime!=null">{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}</span>
-          <span v-if="scope.row.actualStartTime==null">无数据</span>
+          <span v-if="scope.row.actualStartTime!=''">{{scope.row.actualStartTime}}</span>
+          <span v-if="scope.row.actualStartTime==''">无数据</span>
         </template>
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
@@ -136,6 +136,20 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-video-play"
+            @click="startItem(scope.row)"
+            v-hasPermi="['system:item:edit']"
+          >开始</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-folder-delete"
+            @click="endItem(scope.row)"
+            v-hasPermi="['system:item:edit']"
+          >关闭</el-button>
           <el-button
             size="mini"
             type="text"
@@ -353,6 +367,58 @@ export default {
     getPlan(){
       listPlan(this.queryParamsPlanList).then(response => {
         this.planList = response.rows;
+      });
+    },
+    /** 开始项目 */
+    startItem(row){
+      this.$confirm('是否确定开启该项目?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth()+1;
+        var day = date.getDate();
+        var thisTime = year+'-'+month+'-'+day
+        this.form.itemId = row.itemId;
+        this.form.actualStartTime = thisTime;
+        this.form.status = 1
+        updateItem(this.form).then(response => {
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: '开始成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消开始项目'
+        });
+      });
+    },
+    /** 结束项目 */
+    endItem(row){
+      this.$confirm('是否确定结束该项目?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.form.itemId = row.itemId;
+        this.form.status = 2;
+        updateItem(this.form).then(response => {
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: '结束成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消结束'
+        });
       });
     },
     // 取消按钮

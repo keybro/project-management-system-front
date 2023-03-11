@@ -122,6 +122,20 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-document-checked"
+            @click="okThisBug(scope.row)"
+            v-hasPermi="['system:productBug:edit']"
+          >解决</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-folder-delete"
+            @click="endThisBug(scope.row)"
+            v-hasPermi="['system:productBug:edit']"
+          >关闭</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:productBug:edit']"
@@ -384,6 +398,54 @@ export default {
       getInfo().then(resp =>{
         this.createrId = resp.user.userId
       })
+    },
+    /** 解决bug*/
+    okThisBug(row){
+      this.$confirm('确定已成功修改bug?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.form.bugId = row.bugId;
+        this.form.result = 1;
+        updateProductBug(this.form).then(response => {
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: '修改bug成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消修改'
+        });
+      });
+
+    },
+    /** 关闭bug*/
+    endThisBug(row){
+      this.$confirm('确定bug已被成功解决?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.form.bugId = row.bugId;
+        this.form.result = 2;
+        updateProductBug(this.form).then(response => {
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: 'bug解决成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消bug解决确认'
+        });
+      });
+
     },
     // 取消按钮
     cancel() {

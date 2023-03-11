@@ -9,22 +9,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="创建者id" prop="createrId">
-        <el-input
-          v-model="queryParams.createrId"
-          placeholder="请输入创建者id"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="创建者姓名" prop="createrName">
-        <el-input
-          v-model="queryParams.createrName"
-          placeholder="请输入创建者姓名"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="结果" prop="result">
         <el-select v-model="queryParams.result" placeholder="请选择结果" clearable>
           <el-option
@@ -99,11 +83,11 @@
 
     <el-table v-loading="loading" :data="expList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="测试id" align="center" prop="testId" />
-      <el-table-column label="所属产品id" align="center" prop="productId" />
-      <el-table-column label="相关研发需求" align="center" prop="relateRequirementId" />
+      <!--      <el-table-column label="测试id" align="center" prop="testId" />-->
+      <el-table-column label="所属产品" align="center" prop="productName" />
+      <el-table-column label="相关研发需求" align="center" prop="requireName" />
       <el-table-column label="测试标题" align="center" prop="testTitle" />
-      <el-table-column label="创建者id" align="center" prop="createrId" />
+      <!--      <el-table-column label="创建者id" align="center" prop="createrId" />-->
       <el-table-column label="创建者姓名" align="center" prop="createrName" />
       <el-table-column label="结果" align="center" prop="result">
         <template slot-scope="scope">
@@ -117,6 +101,29 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-circle-plus-outline"
+            @click="addStep(scope.row)"
+            v-hasPermi="['system:exp:edit']"
+          >建步骤</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-circle-plus-outline"
+            @click="executeStep(scope.row)"
+            v-hasPermi="['system:exp:edit']"
+          >执行</el-button>
+          <el-button
+            size="mini"
+            type="danger"
+            plain
+            icon="el-icon-cpu"
+            v-if="scope.row.result==2"
+            @click="toMakeBug(scope.row)"
+            v-hasPermi="['system:exp:edit']"
+          >转bug</el-button>
           <el-button
             size="mini"
             type="text"
@@ -134,7 +141,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -144,8 +151,22 @@
     />
 
     <!-- 添加或修改测试列表对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" :visible.sync="open" width="50vw" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="所属产品" prop="productId">
+          <el-input v-model="productName" :placeholder="this.form.productName" disabled/>
+        </el-form-item>
+        <el-form-item label="关联研发需求" prop="relateRequirementId">
+          <!--          <el-input v-model="form.relateRequirementId" placeholder="请输入测试标题" />-->
+          <el-select v-model="form.relateRequirementId" placeholder="请选择关联的研发需求">
+            <el-option
+              v-for="item in requirementList"
+              :key="item.productRequirementId"
+              :label="item.requirementName"
+              :value="item.productRequirementId">
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="测试标题" prop="testTitle">
           <el-input v-model="form.testTitle" placeholder="请输入测试标题" />
         </el-form-item>
@@ -165,11 +186,105 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!--   创建测试步骤对话框 -->
+    <el-dialog
+      title="测试步骤创建"
+      :visible.sync="testStepDialog"
+      width="70vw">
+      <el-form label-width="80px" :model="stepInfo">
+        <div v-for="(item, index) in stepInfo.stepList" :key="index">
+          <el-row>
+            <el-col :span="10">
+              <div class="grid-content bg-purple">
+                <el-form-item label="步骤">
+                  <el-input v-model="item.step_name" style="width: 98%"/>
+                </el-form-item>
+              </div>
+            </el-col>
+            <el-col :span="10">
+              <div class="grid-content bg-purple-light">
+                <el-form-item label="预期">
+                  <el-input v-model="item.hope" style="width: 98%"/>
+                </el-form-item>
+              </div>
+            </el-col>
+            <el-col :span="4">
+              <div class="grid-content bg-purple-light">
+                <el-form-item>
+                  <el-button @click="addItem()"> + </el-button>
+                  <el-button
+                    @click="deleteItem(index)"
+                  >
+                    –
+                  </el-button>
+                </el-form-item>
+              </div>
+            </el-col>
+          </el-row>
+
+        </div>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+    <el-button @click="testStepDialog = false">取 消</el-button>
+    <el-button type="primary" @click="makeSureAddstep">确 定</el-button>
+  </span>
+    </el-dialog>
+
+    <!--  执行测试用例步骤对话框  -->
+    <el-dialog
+      title="测试用例执行"
+      :visible.sync="exeStepDialog"
+      width="80%">
+      <el-form label-width="80px">
+        <el-row v-for="(item,index) in stepList" :key="index">
+          <el-col :span="7">
+            <div class="grid-content bg-purple">
+              <el-form-item label="步骤">
+                <el-input v-model="item.stepName" style="width: 100%"/>
+              </el-form-item>
+            </div>
+          </el-col>
+          <el-col :span="7">
+            <div class="grid-content bg-purple-light">
+              <el-form-item label="预期">
+                <el-input v-model="item.hope" style="width: 100%"/>
+              </el-form-item>
+            </div>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="结果" prop="result">
+              <el-select v-model="item.result" placeholder="请选择结果" clearable>
+                <el-option
+                  v-for="dict in dict.type.test_result"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="实际情况" prop="physicalTruth">
+              <el-input v-model="item.physicalTruth" style="width: 98%"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+    <el-button @click="exeStepDialog = false">取 消</el-button>
+    <el-button type="primary" @click="makeSureExecuteStep">确 定</el-button>
+  </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { listExp, getExp, delExp, addExp, updateExp } from "@/api/system/exp";
+import { listProduct } from '@/api/system/product'
+import { listRequirement } from '@/api/system/requirement'
+import { getInfo } from '@/api/login'
+import { addStep, listStep, updateStep } from '@/api/system/step'
 
 export default {
   name: "Exp",
@@ -178,6 +293,9 @@ export default {
     return {
       // 遮罩层
       loading: true,
+      stepInfo: {
+        stepList: [{ step_name: "", hope: ""}],
+      },
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -186,6 +304,8 @@ export default {
       multiple: true,
       // 显示搜索条件
       showSearch: true,
+      testStepDialog:false,
+      exeStepDialog:false,
       // 总条数
       total: 0,
       // 测试列表表格数据
@@ -206,8 +326,20 @@ export default {
         result: null,
         priority: null
       },
+      queryParamsProductList:{},
+      productName:null,
+      productId:null,
+      productList:[],
+      queryParamsRequireList:{},
+      requirementList:[],
+      createrId:null,
+      createrName:null,
       // 表单参数
       form: {},
+      testId: null,
+      addStepForm:{},
+      stepList:[],
+      queryParamsStepList:{},
       // 表单校验
       rules: {
       }
@@ -215,6 +347,9 @@ export default {
   },
   created() {
     this.getList();
+    this.getProductList();
+    this.getRequireList()
+    this.getUserInfo();
   },
   methods: {
     /** 查询测试列表列表 */
@@ -226,6 +361,132 @@ export default {
         this.loading = false;
       });
     },
+    /** 查询产品列表，创建测试用例用 */
+    getProductList(){
+      listProduct(this.queryParamsProductList).then(response => {
+        this.productList = response.rows;
+        this.form.productId = this.productList[0].productId;
+        this.productId = this.productList[0].productId;
+        this.form.productName = this.productList[0].productName
+        this.productName = this.productList[0].productName
+      });
+    },
+    /** 查询需求列表，创建测试用例用*/
+    getRequireList(){
+      listRequirement(this.queryParamsRequireList).then(response => {
+        this.requirementList = response.rows;
+      });
+    },
+    /** 获取当前用户信息，创建测试用例时用*/
+    getUserInfo(){
+      getInfo().then(resp =>{
+        this.createrId = resp.user.userId
+        this.createrName = resp.user.nickName;
+      })
+    },
+
+    /** 执行测试用例*/
+    addStep(row){
+      this.testStepDialog = true;
+      this.testId = row.testId
+    },
+
+    async makeSureAddstep(){
+      this.testStepDialog = false;
+      console.log(this.stepInfo.stepList)
+      for (let i = 0; i < this.stepInfo.stepList.length; i++) {
+        this.addStepForm.testId = this.testId;
+        this.addStepForm.stepName = this.stepInfo.stepList[i].step_name;
+        this.addStepForm.hope = this.stepInfo.stepList[i].hope;
+        this.addStepForm.result = 0;
+        //批量添加执行步骤
+        await addStep(this.addStepForm).then(response => {
+          console.log("添加了步骤")
+        });
+      }
+      this.$modal.msgSuccess("新增成功");
+    },
+
+    /** 转bug*/
+    toMakeBug(row){
+      const proId = row.productId;
+      this.$router.push('/productTest/toProductBug/'+proId)
+    },
+
+    /** 运行测试步骤*/
+    executeStep(row){
+      this.exeStepDialog = true;
+      this.testId = row.testId;
+      listStep(this.queryParamsStepList).then(response => {
+        this.stepList = response.rows;
+        console.log(this.stepList)
+      });
+
+    },
+    /** 确定执行测试步骤*/
+    async makeSureExecuteStep(){
+      this.exeStepDialog = false;
+      console.log(this.stepList)
+      let passFlag = true;
+      //  1.依次更新步骤表里的执行结果
+      for (let i = 0; i < this.stepList.length; i++) {
+        console.log(this.stepList[i])
+        const form = {
+          stepId:this.stepList[i].stepId,
+          testId:this.stepList[i].testId,
+          stepName:this.stepList[i].stepName,
+          hope:this.stepList[i].hope,
+          result:this.stepList[i].result,
+          physicalTruth:this.stepList[i].physicalTruth
+        }
+        if (this.stepList[i].result==2){
+          passFlag = false
+        }
+        await updateStep(form).then(response => {
+          // this.$modal.msgSuccess("修改成功");
+        });
+      }
+      //所有用例都通过，则测试通过
+      if (passFlag == true){
+        const upTestForm = {
+          testId:this.testId,
+          result:1
+        }
+        updateExp(upTestForm).then(response => {
+          // this.$modal.msgSuccess("修改成功");
+          this.getList();
+        });
+      }
+      //有一个测试用例不通过，那么一整个都不通过
+      else {
+        const upTestForm = {
+          testId:this.testId,
+          result:2
+        }
+        updateExp(upTestForm).then(response => {
+          // this.$modal.msgSuccess("修改成功");
+          this.getList();
+        });
+      }
+      this.$modal.msgSuccess("执行成功");
+    },
+
+    /** 增加测试条目*/
+    addItem() {
+      let that = this;
+      that.stepInfo.stepList.push({
+        step_name: "",
+        hope: "",
+      });
+    },
+    /** 删除测试条目*/
+    deleteItem(i) {
+      if (this.stepInfo.stepList.length <= 1) {
+        return false;
+      }
+      this.stepInfo.stepList.splice(i, 1);
+    },
+
     // 取消按钮
     cancel() {
       this.open = false;
@@ -288,6 +549,10 @@ export default {
               this.getList();
             });
           } else {
+            this.form.createrId = this.createrId;
+            this.form.createrName = this.createrName
+            //创建时未执行
+            this.form.result = 0;
             addExp(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
