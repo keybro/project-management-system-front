@@ -26,20 +26,36 @@
         />
       </el-form-item>
       <el-form-item label="产品负责人" prop="productPrincipalId">
-        <el-input
-          v-model="queryParams.productPrincipalId"
-          placeholder="请输入产品负责人"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+<!--        <el-input-->
+<!--          v-model="queryParams.productPrincipalId"-->
+<!--          placeholder="请输入产品负责人"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.productPrincipalId" placeholder="请选择产品负责人">
+          <el-option
+            v-for="item in selectProductPrincipal"
+            :key="item.userId"
+            :label="item.nickName"
+            :value="item.userId">
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="测试负责人" prop="testPrincipalId">
-        <el-input
-          v-model="queryParams.testPrincipalId"
-          placeholder="请输入测试负责人"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+<!--        <el-input-->
+<!--          v-model="queryParams.testPrincipalId"-->
+<!--          placeholder="请输入测试负责人"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.testPrincipalId" placeholder="请选择测试负责人">
+          <el-option
+            v-for="item in selectTestPrincipal"
+            :key="item.userId"
+            :label="item.nickName"
+            :value="item.userId">
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -236,6 +252,8 @@ export default {
         productPrincipalId: null,
         testPrincipalId: null,
       },
+      selectProductPrincipal:[],
+      selectTestPrincipal:[],
       //查询所属项目集的参数
       queryParamsItemSet: {
       },
@@ -281,8 +299,9 @@ export default {
     getUserList(){
       listUser(this.queryParamsUserList).then(response => {
           this.userList = response.rows;
+          this.selectProductPrincipal = response.rows;
+          this.selectTestPrincipal = response.rows;
           console.log(this.userList)
-
         }
       );
     },

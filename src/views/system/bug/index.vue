@@ -1,6 +1,36 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="所属产品" prop="productId">
+        <el-select v-model="queryParams.productId" placeholder="请选择所属产品" clearable>
+          <el-option
+            v-for="item in productList"
+            :key="item.productId"
+            :label="item.productName"
+            :value="item.productId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="所属项目" prop="itemId">
+        <el-select v-model="queryParams.itemId" placeholder="请选择所属项目" clearable>
+          <el-option
+            v-for="item in itemList"
+            :key="item.itemId"
+            :label="item.itemName"
+            :value="item.itemId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="所属执行" prop="executeId">
+        <el-select v-model="queryParams.executeId" placeholder="请选择所属执行" clearable>
+          <el-option
+            v-for="item in executeList"
+            :key="item.executeId"
+            :label="item.executeName"
+            :value="item.executeId"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="bug类型" prop="bugType">
         <el-select v-model="queryParams.bugType" placeholder="请选择bug类型" clearable>
           <el-option
@@ -95,8 +125,8 @@
       <el-table-column type="selection" width="55" align="center" />
       <!--      <el-table-column label="bugid" align="center" prop="bugId" />-->
       <el-table-column label="产品" align="center" prop="productName" />
-      <el-table-column label="项目" align="center" prop="itemName" />
-      <el-table-column label="执行" align="center" prop="executeName" />
+      <el-table-column label="所属项目" align="center" prop="itemName" />
+      <el-table-column label="所属执行" align="center" prop="executeName" />
       <el-table-column label="指派人" align="center" prop="designateName" />
       <el-table-column label="bug类型" align="center" prop="bugType">
         <template slot-scope="scope">
@@ -122,17 +152,19 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-document-checked"
-            @click="okThisBug(scope.row)"
+            icon="el-icon-folder-delete"
+            @click="closeBug(scope.row)"
             v-hasPermi="['system:productBug:edit']"
-          >解决</el-button>
+            v-if="scope.row.result!=2"
+          >关闭</el-button>
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-folder-delete"
-            @click="endThisBug(scope.row)"
+            icon="el-icon-magic-stick"
+            @click="activeBug(scope.row)"
             v-hasPermi="['system:productBug:edit']"
-          >关闭</el-button>
+            v-if="scope.row.result==2"
+          >激活</el-button>
           <el-button
             size="mini"
             type="text"
@@ -419,9 +451,9 @@ export default {
       });
 
     },
-    /** 关闭bug*/
-    endThisBug(row){
-      this.$confirm('确定bug已被成功解决?', '提示', {
+    /** 关闭bug  */
+    closeBug(row){
+      this.$confirm('此操作将关闭该bug, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -429,16 +461,41 @@ export default {
         this.form.bugId = row.bugId;
         this.form.result = 2;
         updateProductBug(this.form).then(response => {
+          this.open = false;
           this.getList();
         });
         this.$message({
           type: 'success',
-          message: 'bug解决成功!'
+          message: '关闭成功!'
         });
       }).catch(() => {
         this.$message({
           type: 'info',
-          message: '已取消bug解决确认'
+          message: '已取消关闭'
+        });
+      });
+    },
+    /** 激活bug  */
+    activeBug(row){
+      this.$confirm('此操作将激活该bug, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.form.bugId = row.bugId;
+        this.form.result = 0;
+        updateProductBug(this.form).then(response => {
+          this.open = false;
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: '激活成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消激活'
         });
       });
 

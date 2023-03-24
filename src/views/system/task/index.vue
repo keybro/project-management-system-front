@@ -184,6 +184,7 @@
             icon="el-icon-video-play"
             @click="startTask(scope.row)"
             v-hasPermi="['system:task:edit']"
+            v-if="scope.row.taskState!=1"
           >开始</el-button>
           <el-button
             size="mini"
@@ -191,6 +192,7 @@
             icon="el-icon-circle-check"
             @click="finishTask(scope.row)"
             v-hasPermi="['system:task:edit']"
+            v-if="scope.row.taskState==1"
           >完成</el-button>
           <el-button
             size="mini"
@@ -335,6 +337,7 @@ import { listTask, getTask, delTask, addTask, updateTask } from "@/api/system/ta
 import { listExecute } from '@/api/system/execute'
 import { listRequirement } from '@/api/system/requirement'
 import { listUser } from '@/api/system/user'
+import { listItem } from '@/api/system/item'
 
 export default {
   name: "Task",
@@ -389,7 +392,11 @@ export default {
       form: {},
       // 表单校验
       rules: {
-      }
+      },
+      itemList:[],
+      queryParamsItem:{},
+      execute:[],
+      queryParamsExecuteListOne:{},
     };
   },
   created() {
@@ -430,8 +437,43 @@ export default {
       );
     },
     startTask(row){
-      this.startTaskDialog = true;
-      this.form.taskId = row.taskId;
+      //判断任务所属项目是否已经开始
+      //如果没有开始，提示等待项目经理开始
+      var exeId = row.executeId;
+      this.queryParamsExecuteListOne.executeId = exeId;
+      //获取执行信息，进而过得itemId
+      listExecute(this.queryParamsExecuteListOne).then(response => {
+        this.execute = response.rows;
+        console.log(this.execute);
+        var itemId = this.execute[0].itemId;
+        this.queryParamsItem.itemId = itemId;
+        //获取项目信息
+        listItem(this.queryParamsItem).then(response => {
+          this.itemList = response.rows;
+          console.log(this.itemList)
+          if (this.itemList[0].status==0){
+            console.log("没开始")
+            this.$confirm('项目尚未开始，请联系项目负责人', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            })
+          }
+          if (this.itemList[0].status==2){
+            this.$confirm('项目已结束，请联系项目负责人', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            })
+          }
+          if (this.itemList[0].status==1){
+            //如果开始了，跳出开始对话框
+            this.startTaskDialog = true;
+            this.form.taskId = row.taskId;
+          }
+        });
+      });
+
     },
     /** 确定开始任务 */
     makeSureStartTask(){
@@ -443,6 +485,7 @@ export default {
       var thisTime = year+'-'+month+'-'+day;
       this.form.actualStartTime = thisTime;
       this.form.taskState = 1;
+      this.form.timeConsuming = 0;
       updateTask(this.form).then(response => {
         this.$modal.msgSuccess("开始成功");
         this.getList();

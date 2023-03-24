@@ -1,6 +1,22 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="所属产品" prop="testTitle">
+<!--        <el-input-->
+<!--          v-model="queryParams.testTitle"-->
+<!--          placeholder="请输入测试标题"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.productId" placeholder="请选择所属产品">
+          <el-option
+            v-for="item in productList"
+            :key="item.productId"
+            :label="item.productName"
+            :value="item.productId">
+          </el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item label="测试标题" prop="testTitle">
         <el-input
           v-model="queryParams.testTitle"
@@ -198,7 +214,7 @@
             <el-col :span="10">
               <div class="grid-content bg-purple">
                 <el-form-item label="步骤">
-                  <el-input v-model="item.step_name" style="width: 98%"/>
+                  <el-input v-model="item.stepName" style="width: 98%"/>
                 </el-form-item>
               </div>
             </el-col>
@@ -294,7 +310,7 @@ export default {
       // 遮罩层
       loading: true,
       stepInfo: {
-        stepList: [{ step_name: "", hope: ""}],
+        stepList: [{ stepName: "", hope: ""}],
       },
       // 选中数组
       ids: [],
@@ -389,6 +405,15 @@ export default {
     addStep(row){
       this.testStepDialog = true;
       this.testId = row.testId
+      this.queryParamsStepList.testId = this.testId
+      listStep(this.queryParamsStepList).then(response => {
+        this.stepList = response.rows;
+        if (this.stepList.length!=0){
+          this.stepInfo.stepList = this.stepList
+        }
+        console.log("建用例")
+        console.log(this.stepList)
+      })
     },
 
     async makeSureAddstep(){
@@ -396,7 +421,7 @@ export default {
       console.log(this.stepInfo.stepList)
       for (let i = 0; i < this.stepInfo.stepList.length; i++) {
         this.addStepForm.testId = this.testId;
-        this.addStepForm.stepName = this.stepInfo.stepList[i].step_name;
+        this.addStepForm.stepName = this.stepInfo.stepList[i].stepName;
         this.addStepForm.hope = this.stepInfo.stepList[i].hope;
         this.addStepForm.result = 0;
         //批量添加执行步骤
@@ -475,7 +500,7 @@ export default {
     addItem() {
       let that = this;
       that.stepInfo.stepList.push({
-        step_name: "",
+        stepName: "",
         hope: "",
       });
     },

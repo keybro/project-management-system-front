@@ -122,6 +122,22 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-folder-delete"
+            @click="closeBug(scope.row)"
+            v-hasPermi="['system:productBug:edit']"
+            v-if="scope.row.result!=2"
+          >关闭</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-magic-stick"
+            @click="activeBug(scope.row)"
+            v-hasPermi="['system:productBug:edit']"
+            v-if="scope.row.result==2"
+          >激活</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:productBug:edit']"
@@ -162,7 +178,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属执行" prop="executeId">
-          <el-select v-model="form.executeId" placeholder="请选择所属执行">
+          <el-select v-model="form.executeId" placeholder="请选择所属执行" @change="changeExe">
             <el-option
               v-for="item in executeList"
               :key="item.executeId"
@@ -319,6 +335,7 @@ export default {
   },
   created() {
     this.productId = this.$route.params.proId;
+    this.queryParams.productId = this.productId;
     this.queryParamsProductList.productId = this.productId
     this.queryParamsItemList.relatedProductId = this.productId;
     this.queryParamsExecuteList.relatedProductId = this.productId;
@@ -387,6 +404,61 @@ export default {
       getInfo().then(resp =>{
         this.createrId = resp.user.userId
       })
+    },
+    /** 选择所属执行后选择，查询与执行关联的任务*/
+    changeExe(value){
+      console.log(value)
+      this.queryParamsTaskList.executeId = value;
+      this.getTaskList();
+    },
+    /** 关闭bug  */
+    closeBug(row){
+      this.$confirm('此操作将关闭该bug, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+        this.form.bugId = row.bugId;
+        this.form.result = 2;
+        updateProductBug(this.form).then(response => {
+          this.open = false;
+          this.getList();
+        });
+          this.$message({
+            type: 'success',
+            message: '关闭成功!'
+          });
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消关闭'
+          });
+        });
+    },
+    /** 激活bug  */
+    activeBug(row){
+      this.$confirm('此操作将激活该bug, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.form.bugId = row.bugId;
+        this.form.result = 0;
+        updateProductBug(this.form).then(response => {
+          this.open = false;
+          this.getList();
+        });
+        this.$message({
+          type: 'success',
+          message: '激活成功!'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消激活'
+        });
+      });
+
     },
     // 取消按钮
     cancel() {

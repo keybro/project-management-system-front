@@ -1,6 +1,36 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="所属产品" prop="productId">
+        <el-select v-model="queryParams.productId" placeholder="请选择所属产品" clearable>
+          <el-option
+            v-for="item in productList"
+            :key="item.productId"
+            :label="item.productName"
+            :value="item.productId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="所属项目" prop="itemId">
+        <el-select v-model="queryParams.itemId" placeholder="请选择所属项目" clearable>
+          <el-option
+            v-for="item in itemList"
+            :key="item.itemId"
+            :label="item.itemName"
+            :value="item.itemId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="所属执行" prop="executeId">
+        <el-select v-model="queryParams.executeId" placeholder="请选择所属执行" clearable>
+          <el-option
+            v-for="item in executeList"
+            :key="item.executeId"
+            :label="item.executeName"
+            :value="item.executeId"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="bug类型" prop="bugType">
         <el-select v-model="queryParams.bugType" placeholder="请选择bug类型" clearable>
           <el-option
@@ -125,14 +155,15 @@
             icon="el-icon-document-checked"
             @click="okThisBug(scope.row)"
             v-hasPermi="['system:productBug:edit']"
+            v-if="scope.row.result==0"
           >解决</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-folder-delete"
-            @click="endThisBug(scope.row)"
-            v-hasPermi="['system:productBug:edit']"
-          >关闭</el-button>
+<!--          <el-button-->
+<!--            size="mini"-->
+<!--            type="text"-->
+<!--            icon="el-icon-folder-delete"-->
+<!--            @click="endThisBug(scope.row)"-->
+<!--            v-hasPermi="['system:productBug:edit']"-->
+<!--          >关闭</el-button>-->
           <el-button
             size="mini"
             type="text"

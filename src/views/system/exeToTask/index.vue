@@ -11,16 +11,16 @@
 <!--          />-->
 <!--        </el-select>-->
 <!--      </el-form-item>-->
-      <el-form-item label="相关需求" prop="executeId">
-        <el-select v-model="queryParams.relateRequirement" placeholder="请选择相关需求" clearable>
-          <el-option
-            v-for="item in requirementList"
-            :key="item.productRequirementId"
-            :label="item.requirementName"
-            :value="item.productRequirementId"
-          />
-        </el-select>
-      </el-form-item>
+<!--      <el-form-item label="相关需求" prop="executeId">-->
+<!--        <el-select v-model="queryParams.relateRequirement" placeholder="请选择相关需求" clearable>-->
+<!--          <el-option-->
+<!--            v-for="item in requirementList"-->
+<!--            :key="item.productRequirementId"-->
+<!--            :label="item.requirementName"-->
+<!--            :value="item.productRequirementId"-->
+<!--          />-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="任务类型" prop="taskType">
         <el-select v-model="queryParams.taskType" placeholder="请选择任务类型" clearable>
           <el-option
@@ -184,6 +184,7 @@
             icon="el-icon-video-play"
             @click="startTask(scope.row)"
             v-hasPermi="['system:task:edit']"
+            v-if="scope.row.taskState!=1"
           >开始</el-button>
           <el-button
             size="mini"
@@ -191,6 +192,7 @@
             icon="el-icon-circle-check"
             @click="finishTask(scope.row)"
             v-hasPermi="['system:task:edit']"
+            v-if="scope.row.taskState==1"
           >完成</el-button>
           <el-button
             size="mini"
@@ -221,16 +223,16 @@
     <!-- 添加或修改任务列表对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="50vw" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="所属执行" prop="executeId">
-          <el-select v-model="form.executeId" placeholder="请选择所属执行">
-            <el-option
-              v-for="item in executeList"
-              :key="item.executeId"
-              :label="item.executeName"
-              :value="item.executeId"
-            ></el-option>
-          </el-select>
-        </el-form-item>
+<!--        <el-form-item label="所属执行" prop="executeId">-->
+<!--          <el-select v-model="form.executeId" placeholder="请选择所属执行">-->
+<!--            <el-option-->
+<!--              v-for="item in executeList"-->
+<!--              :key="item.executeId"-->
+<!--              :label="item.executeName"-->
+<!--              :value="item.executeId"-->
+<!--            ></el-option>-->
+<!--          </el-select>-->
+<!--        </el-form-item>-->
         <el-form-item label="任务类型" prop="taskType">
           <el-select v-model="form.taskType" placeholder="请选择任务类型">
             <el-option
@@ -251,16 +253,16 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="关联研发需求" prop="relateRequirement">
-          <el-select v-model="form.relateRequirement" placeholder="请选择指派人">
-            <el-option
-              v-for="item in requirementList"
-              :key="item.productRequirementId"
-              :label="item.requirementName"
-              :value="item.productRequirementId"
-            ></el-option>
-          </el-select>
-        </el-form-item>
+<!--        <el-form-item label="关联研发需求" prop="relateRequirement">-->
+<!--          <el-select v-model="form.relateRequirement" placeholder="请选择指派人">-->
+<!--            <el-option-->
+<!--              v-for="item in requirementList"-->
+<!--              :key="item.productRequirementId"-->
+<!--              :label="item.requirementName"-->
+<!--              :value="item.productRequirementId"-->
+<!--            ></el-option>-->
+<!--          </el-select>-->
+<!--        </el-form-item>-->
         <el-form-item label="任务名称" prop="taskName">
           <el-input v-model="form.taskName" placeholder="请输入任务名城管" />
         </el-form-item>
@@ -335,6 +337,7 @@ import { listTask, getTask, delTask, addTask, updateTask } from "@/api/system/ta
 import { listExecute } from '@/api/system/execute'
 import { listRequirement } from '@/api/system/requirement'
 import { getUser, listUser } from '@/api/system/user'
+import { listItem } from '@/api/system/item'
 
 export default {
   name: "index",
@@ -391,12 +394,17 @@ export default {
       form: {},
       // 表单校验
       rules: {
-      }
+      },
+      queryParamsExecuteListOne:{},
+      queryParamsItem:{},
+      execute:[],
+      itemList:[],
     };
   },
   created() {
     this.exeId = this.$route.params.exeId;
     this.queryParams.executeId = this.exeId
+    this.queryParamsExecuteList.executeId = this.exeId;
     this.getList();
     this.getExecuteList();
     this.getRequreList();
@@ -415,6 +423,7 @@ export default {
 
     /** 查询执行列表 */
     getExecuteList(){
+      this.queryParamsExecuteList.executeId = this.exeId;
       listExecute(this.queryParamsExecuteList).then(response => {
         this.executeList = response.rows;
         const groupIds = this.executeList[0].teamMembersIds.split(',')
@@ -440,8 +449,43 @@ export default {
       );
     },
     startTask(row){
-      this.startTaskDialog = true;
-      this.form.taskId = row.taskId;
+      //判断任务所属项目是否已经开始
+      //如果没有开始，提示等待项目经理开始
+      var exeId = row.executeId;
+      this.queryParamsExecuteListOne.executeId = exeId;
+      //获取执行信息，进而过得itemId
+      listExecute(this.queryParamsExecuteListOne).then(response => {
+        this.execute = response.rows;
+        console.log(this.execute)
+        var itemId = this.execute[0].itemId;
+        this.queryParamsItem.itemId = itemId;
+        //获取项目信息
+        listItem(this.queryParamsItem).then(response => {
+          this.itemList = response.rows;
+          console.log("在这")
+          console.log(this.itemList)
+          if (this.itemList[0].status==0){
+            console.log("没开始")
+            this.$confirm('项目尚未开始，请联系项目负责人', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            })
+          }
+          if (this.itemList[0].status==2){
+            this.$confirm('项目已结束，请联系项目负责人', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            })
+          }
+          if (this.itemList[0].status==1){
+            //如果开始了，跳出开始对话框
+            this.startTaskDialog = true;
+            this.form.taskId = row.taskId;
+          }
+        });
+      });
     },
     /** 确定开始任务 */
     makeSureStartTask(){
@@ -543,6 +587,9 @@ export default {
           } else {
             this.form.taskState = 0;
             this.form.timeConsuming = 0;
+            //点击任务分解进入的任务界面，创建时是不需要选择所属执行和关联需求的
+            this.form.executeId = this.$route.params.exeId;
+            this.form.relateRequirement = this.executeList[0].relateRequireId
             addTask(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;

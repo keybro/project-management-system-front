@@ -1,6 +1,22 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="所属项目" prop="itemId">
+<!--        <el-input-->
+<!--          v-model="queryParams.executeName"-->
+<!--          placeholder="请输入执行名称"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.itemId" placeholder="请选择所属项目">
+          <el-option
+            v-for="item in itemList"
+            :key="item.itemId"
+            :label="item.itemName"
+            :value="item.itemId">
+          </el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item label="执行名称" prop="executeName">
         <el-input
           v-model="queryParams.executeName"
@@ -198,7 +214,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="关联产品" prop="relatedProductId">
-          <el-select v-model="form.relatedProductId" placeholder="请选择关联产品">
+          <el-select v-model="form.relatedProductId" placeholder="请选择关联产品" @change="selectChanged">
             <el-option
               v-for="item in productList"
               :key="item.productId"
@@ -405,6 +421,20 @@ export default {
         this.requirementList = response.rows;
       });
     },
+    /** 新增执行时，选择产品后，获取产品关联的需求和计划，避免全部显示*/
+    selectChanged(value){
+      console.log(value)
+      this.queryParamsPlanList.productId = value;
+      listPlan(this.queryParamsPlanList).then(response => {
+        this.planList = response.rows;
+        console.log(this.planList)
+      });
+      this.queryParamsRequireList.productId = value;
+      listRequirement(this.queryParamsRequireList).then(response => {
+        this.requirementList = response.rows;
+      });
+
+    },
 
     addGroupMembers(){
       const memberIds = this.form.teamMembersIds
@@ -491,12 +521,14 @@ export default {
               this.getList();
             });
           } else {
-            this.addGroupMembers()
-            // addExecute(this.form).then(response => {
-            //   this.$modal.msgSuccess("新增成功");
-            //   this.open = false;
-            //   this.getList();
-            // });
+            //添加团队成员
+            // this.addGroupMembers()
+            console.log(this.form)
+            addExecute(this.form).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.open = false;
+              this.getList();
+            });
           }
         }
       });

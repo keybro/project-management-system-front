@@ -255,6 +255,32 @@ export default {
         this.planList = response.rows;
         this.total = response.total;
         this.loading = false;
+      // 获取计划设置的开始时间，如果计划设置的开始时间已经到了，则自动开启计划
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        var curDate = date.getDate();
+        // 月份不足10补0
+        if(month < 10){
+          month = '0' + month;
+        }
+        // 日不足10补0
+        if(curDate < 10){
+          curDate = '0' + curDate;
+        }
+        var thisTime = year+"-"+month+'-'+curDate;
+        console.log(thisTime)
+        for (let i = 0; i < this.planList.length; i++) {
+          if (thisTime>=this.planList[i].startTime){
+            this.planList[i].planState = 1
+          }
+          if (thisTime>this.planList[i].endTime){
+            this.planList[i].planState = 2
+          }
+          if (thisTime<this.planList[i].startTime){
+            this.planList[i].planState = 0
+          }
+        }
       });
     },
 

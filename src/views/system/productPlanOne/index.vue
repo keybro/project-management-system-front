@@ -1,22 +1,22 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="所属产品" prop="productId">
-        <!--        <el-input-->
-        <!--          v-model="queryParams.productId"-->
-        <!--          placeholder="请输入所属产品id"-->
-        <!--          clearable-->
-        <!--          @keyup.enter.native="handleQuery"-->
-        <!--        />-->
-        <el-select v-model="queryParams.productId" placeholder="请选择所属产品">
-          <el-option
-            v-for="item in productList"
-            :key="item.productName"
-            :label="item.productName"
-            :value="item.productId">
-          </el-option>
-        </el-select>
-      </el-form-item>
+<!--      <el-form-item label="所属产品" prop="productId">-->
+<!--        &lt;!&ndash;        <el-input&ndash;&gt;-->
+<!--        &lt;!&ndash;          v-model="queryParams.productId"&ndash;&gt;-->
+<!--        &lt;!&ndash;          placeholder="请输入所属产品id"&ndash;&gt;-->
+<!--        &lt;!&ndash;          clearable&ndash;&gt;-->
+<!--        &lt;!&ndash;          @keyup.enter.native="handleQuery"&ndash;&gt;-->
+<!--        &lt;!&ndash;        />&ndash;&gt;-->
+<!--        <el-select v-model="queryParams.productId" placeholder="请选择所属产品">-->
+<!--          <el-option-->
+<!--            v-for="item in productList"-->
+<!--            :key="item.productName"-->
+<!--            :label="item.productName"-->
+<!--            :value="item.productId">-->
+<!--          </el-option>-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="计划名称" prop="planName">
         <el-input
           v-model="queryParams.planName"
@@ -154,17 +154,17 @@
     <!-- 添加或修改产品计划列表对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="50vw" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="所属产品" prop="productId">
-          <!--          <el-input v-model="form.productId" placeholder="请输入所属产品id" />-->
-          <el-select v-model="form.productId" placeholder="请选择所属产品">
-            <el-option
-              v-for="item in productList"
-              :key="item.productName"
-              :label="item.productName"
-              :value="item.productId">
-            </el-option>
-          </el-select>
-        </el-form-item>
+<!--        <el-form-item label="所属产品" prop="productId">-->
+<!--          &lt;!&ndash;          <el-input v-model="form.productId" placeholder="请输入所属产品id" />&ndash;&gt;-->
+<!--          <el-select v-model="form.productId" placeholder="请选择所属产品">-->
+<!--            <el-option-->
+<!--              v-for="item in productList"-->
+<!--              :key="item.productName"-->
+<!--              :label="item.productName"-->
+<!--              :value="item.productId">-->
+<!--            </el-option>-->
+<!--          </el-select>-->
+<!--        </el-form-item>-->
         <el-form-item label="计划名称" prop="planName">
           <el-input v-model="form.planName" placeholder="请输入计划名称" />
         </el-form-item>
@@ -256,6 +256,28 @@ export default {
       listPlan(this.queryParams).then(response => {
         this.planList = response.rows;
         this.total = response.total;
+
+        var date = new Date();
+        for (let i = 0; i < this.planList.length; i++) {
+          var year = date.getFullYear();
+
+          var month = date.getMonth() + 1;
+
+          var day = date.getDate();
+
+          month = (month > 9) ? month : ('0' + month);
+          day = (day < 10) ? ('0' + day) : day;
+          var today = year + '-' + month + '-' + day;
+          if (today<this.planList[i].startTime){
+            this.planList[i].planState = 0;
+          }
+          if (today>=this.planList[i].startTime){
+            this.planList[i].planState = 1
+          }
+          if (today>this.planList[i].endTime){
+            this.planList[i].planState = 2
+          }
+        }
         this.loading = false;
       });
     },
@@ -329,6 +351,7 @@ export default {
             });
           } else {
             this.form.planState = 0;
+            this.form.productId = this.$route.params.proId
             addPlan(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;

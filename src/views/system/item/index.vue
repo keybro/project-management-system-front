@@ -1,6 +1,22 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="90px">
+      <el-form-item label="所属项目集" prop="itemSetId">
+<!--        <el-input-->
+<!--          v-model="queryParams.itemName"-->
+<!--          placeholder="请输入项目名称"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.itemSetId" placeholder="请选择所属项目集">
+          <el-option
+            v-for="item in item_setList"
+            :key="item.itemSetId"
+            :label="item.itemSetName"
+            :value="item.itemSetId">
+          </el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item label="项目名称" prop="itemName">
         <el-input
           v-model="queryParams.itemName"
@@ -142,6 +158,7 @@
             icon="el-icon-video-play"
             @click="startItem(scope.row)"
             v-hasPermi="['system:item:edit']"
+            v-if="scope.row.status!=1"
           >开始</el-button>
           <el-button
             size="mini"
@@ -149,6 +166,7 @@
             icon="el-icon-folder-delete"
             @click="endItem(scope.row)"
             v-hasPermi="['system:item:edit']"
+            v-if="scope.row.status==1"
           >关闭</el-button>
           <el-button
             size="mini"

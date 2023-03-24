@@ -11,14 +11,14 @@
       <!--          />-->
       <!--        </el-select>-->
       <!--      </el-form-item>-->
-      <el-form-item label="所属产品" prop="requirementName">
+      <el-form-item label="所属产品" prop="productId">
         <!--        <el-input-->
         <!--          v-model="queryParams.requirementName"-->
         <!--          placeholder="请输入所属产品"-->
         <!--          clearable-->
         <!--          @keyup.enter.native="handleQuery"-->
         <!--        />-->
-        <el-select v-model="queryParams.productRequirementId" placeholder="请选择">
+        <el-select v-model="queryParams.productId" placeholder="请选择所属产品">
           <el-option
             v-for="item in productList"
             :key="item.productName"
@@ -27,7 +27,7 @@
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="所属计划" prop="requirementType">
+      <el-form-item label="所属计划" prop="productPlanId">
         <!--        <el-select v-model="queryParams.requirementType" placeholder="请选择所属计划" clearable>-->
         <!--          <el-option-->
         <!--            v-for="dict in dict.type.requirement_type"-->
@@ -55,14 +55,22 @@
           />
         </el-select>
       </el-form-item>
-      <!--      <el-form-item label="创建者姓名" prop="createUserName">-->
-      <!--        <el-input-->
-      <!--          v-model="queryParams.createUserName"-->
-      <!--          placeholder="请输入创建者姓名"-->
-      <!--          clearable-->
-      <!--          @keyup.enter.native="handleQuery"-->
-      <!--        />-->
-      <!--      </el-form-item>-->
+            <el-form-item label="创建者" prop="createUserName">
+<!--              <el-input-->
+<!--                v-model="queryParams.createUserName"-->
+<!--                placeholder="请输入创建者姓名"-->
+<!--                clearable-->
+<!--                @keyup.enter.native="handleQuery"-->
+<!--              />-->
+              <el-select v-model="queryParams.createUserName" placeholder="请选择创建人">
+                <el-option
+                  v-for="item in createUserList"
+                  :key="item.nickName"
+                  :label="item.nickName"
+                  :value="item.nickName">
+                </el-option>
+              </el-select>
+            </el-form-item>
       <!--      <el-form-item label="支配人id" prop="designateUserId">-->
       <!--        <el-input-->
       <!--          v-model="queryParams.designateUserId"-->
@@ -326,6 +334,7 @@ import { listProduct } from '@/api/system/product'
 import { listPlan } from '@/api/system/plan'
 import { getInfo } from '@/api/login'
 import { listUser,getUser } from '@/api/system/user'
+import { listTask } from '@/api/system/task'
 
 export default {
   name: "index",
@@ -354,6 +363,7 @@ export default {
       designateDialog:false,
       //指派更新参数
       designateForm:{},
+      createUserList:[],
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -384,7 +394,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-      }
+      },
+      queryParamsTask:{},
+      taskList:[],
     };
   },
   created() {
@@ -403,9 +415,27 @@ export default {
       this.loading = true;
       await listRequirement(this.queryParams).then(response => {
         this.requirementList = response.rows;
-        console.log(this.requirementList)
-        console.log(this.requirementList.designateUserName == '')
         this.total = response.total;
+        for (let i = 0; i < this.requirementList.length; i++) {
+          //  获取关联此需求的任务
+          this.queryParamsTask.relateRequirement = this.requirementList[i].productRequirementId;
+          listTask(this.queryParamsTask).then(response => {
+            this.taskList = response.rows;
+            var finish = 0;
+            for (let j = 0; j < this.taskList.length; j++) {
+              if (this.taskList[j].taskState==1){
+                this.requirementList[i].stage = 2;
+                break;
+              }
+              if (this.taskList[j].taskState==2){
+                finish++;
+              }
+            }
+            if (finish == this.taskList.length && finish!=0){
+              this.requirementList[i].stage = 3
+            }
+          });
+        }
         this.loading = false;
       });
     },
@@ -420,6 +450,7 @@ export default {
     getUserList(){
       listUser(this.queryParamsUserList).then(response => {
           this.userList = response.rows;
+          this.createUserList = response.rows
           console.log(this.userList)
         }
       );

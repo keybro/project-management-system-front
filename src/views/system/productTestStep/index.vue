@@ -111,7 +111,7 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-circle-plus-outline"
+            icon="el-icon-video-play"
             @click="executeStep(scope.row)"
             v-hasPermi="['system:exp:edit']"
           >执行</el-button>
@@ -198,7 +198,7 @@
             <el-col :span="10">
               <div class="grid-content bg-purple">
                 <el-form-item label="步骤">
-                  <el-input v-model="item.step_name" style="width: 98%"/>
+                  <el-input v-model="item.stepName" style="width: 98%"/>
                 </el-form-item>
               </div>
             </el-col>
@@ -294,7 +294,7 @@ export default {
       // 遮罩层
       loading: true,
       stepInfo: {
-        stepList: [{ step_name: "", hope: ""}],
+        stepList: [{ stepName: "", hope: ""}],
       },
       // 选中数组
       ids: [],
@@ -368,7 +368,9 @@ export default {
     /** 查询产品列表，创建测试用例用 */
     getProductList(){
       listProduct(this.queryParamsProductList).then(response => {
+        console.log("执行到")
         this.productList = response.rows;
+        console.log(this.productList)
         this.form.productId = this.productList[0].productId;
         this.productId = this.productList[0].productId;
         this.form.productName = this.productList[0].productName
@@ -393,6 +395,16 @@ export default {
     addStep(row){
       this.testStepDialog = true;
       this.testId = row.testId
+      this.queryParamsStepList.testId = this.testId
+      listStep(this.queryParamsStepList).then(response => {
+        this.stepList = response.rows;
+        if (this.stepList.length!=0){
+          this.stepInfo.stepList = this.stepList
+        }
+        console.log("建用例")
+        console.log(this.stepList)
+      })
+
     },
 
     async makeSureAddstep(){
@@ -400,7 +412,7 @@ export default {
       console.log(this.stepInfo.stepList)
       for (let i = 0; i < this.stepInfo.stepList.length; i++) {
         this.addStepForm.testId = this.testId;
-        this.addStepForm.stepName = this.stepInfo.stepList[i].step_name;
+        this.addStepForm.stepName = this.stepInfo.stepList[i].stepName;
         this.addStepForm.hope = this.stepInfo.stepList[i].hope;
         this.addStepForm.result = 0;
         //批量添加执行步骤
@@ -414,16 +426,29 @@ export default {
     /** 转bug*/
     toMakeBug(row){
       const proId = row.productId;
+      console.log(proId)
       this.$router.push('/productTest/toProductBug/'+proId)
     },
 
     /** 运行测试步骤*/
     executeStep(row){
-      this.exeStepDialog = true;
       this.testId = row.testId;
+      this.queryParamsStepList.testId = this.testId
       listStep(this.queryParamsStepList).then(response => {
         this.stepList = response.rows;
+        console.log("有没有搞错")
         console.log(this.stepList)
+        //如果已经建立测试步骤，显示执行界面
+        if (this.stepList.length!=0){
+          this.exeStepDialog = true;
+        }
+        else {
+          this.$confirm('该测试用例尚未建立测试步骤，请先建立测试步骤?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          })
+        }
       });
 
     },
@@ -479,7 +504,7 @@ export default {
     addItem() {
       let that = this;
       that.stepInfo.stepList.push({
-        step_name: "",
+        stepName: "",
         hope: "",
       });
     },

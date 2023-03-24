@@ -2,12 +2,20 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="90px">
       <el-form-item label="所属项目集" prop="itemSetId">
-        <el-input
-          v-model="queryParams.itemSetId"
-          placeholder="请输入所属项目集"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+<!--        <el-input-->
+<!--          v-model="queryParams.itemSetId"-->
+<!--          placeholder="请输入所属项目集"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.itemSetId" placeholder="请选择所属项目集">
+          <el-option
+            v-for="item in item_setList"
+            :key="item.itemSetId"
+            :label="item.itemSetName"
+            :value="item.itemSetId">
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="产品名称" prop="productName">
         <el-input
@@ -18,20 +26,36 @@
         />
       </el-form-item>
       <el-form-item label="产品负责人" prop="productPrincipalId">
-        <el-input
-          v-model="queryParams.productPrincipalId"
-          placeholder="请输入产品负责人"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+<!--        <el-input-->
+<!--          v-model="queryParams.productPrincipalId"-->
+<!--          placeholder="请输入产品负责人"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.productPrincipalId" placeholder="请选择产品负责人">
+          <el-option
+            v-for="item in userList"
+            :key="item.userId"
+            :label="item.nickName"
+            :value="item.userId">
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="测试负责人" prop="testPrincipalId">
-        <el-input
-          v-model="queryParams.testPrincipalId"
-          placeholder="请输入测试负责人"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+<!--        <el-input-->
+<!--          v-model="queryParams.testPrincipalId"-->
+<!--          placeholder="请输入测试负责人"-->
+<!--          clearable-->
+<!--          @keyup.enter.native="handleQuery"-->
+<!--        />-->
+        <el-select v-model="queryParams.testPrincipalId" placeholder="请选择测试负责人">
+          <el-option
+            v-for="item in userList"
+            :key="item.userId"
+            :label="item.nickName"
+            :value="item.userId">
+          </el-option>
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -40,38 +64,38 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="primary"-->
-<!--          plain-->
-<!--          icon="el-icon-plus"-->
-<!--          size="mini"-->
-<!--          @click="handleAdd"-->
-<!--          v-hasPermi="['system:productTest:add']"-->
-<!--        >新增</el-button>-->
-<!--      </el-col>-->
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="success"-->
-<!--          plain-->
-<!--          icon="el-icon-edit"-->
-<!--          size="mini"-->
-<!--          :disabled="single"-->
-<!--          @click="handleUpdate"-->
-<!--          v-hasPermi="['system:productTest:edit']"-->
-<!--        >修改</el-button>-->
-<!--      </el-col>-->
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="danger"-->
-<!--          plain-->
-<!--          icon="el-icon-delete"-->
-<!--          size="mini"-->
-<!--          :disabled="multiple"-->
-<!--          @click="handleDelete"-->
-<!--          v-hasPermi="['system:productTest:remove']"-->
-<!--        >删除</el-button>-->
-<!--      </el-col>-->
+      <el-col :span="1.5">
+        <el-button
+          type="primary"
+          plain
+          icon="el-icon-plus"
+          size="mini"
+          @click="handleAdd"
+          v-hasPermi="['system:productTest:add']"
+        >新增</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="el-icon-edit"
+          size="mini"
+          :disabled="single"
+          @click="handleUpdate"
+          v-hasPermi="['system:productTest:edit']"
+        >修改</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="multiple"
+          @click="handleDelete"
+          v-hasPermi="['system:productTest:remove']"
+        >删除</el-button>
+      </el-col>
       <el-col :span="1.5">
         <el-button
           type="warning"
@@ -98,17 +122,17 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-edit"
+            icon="el-icon-folder-add"
             @click="ToMakeStep(scope.row)"
             v-hasPermi="['system:productTest:edit']"
           >建测试用例</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="toMakeBug(scope.row)"
-            v-hasPermi="['system:productTest:remove']"
-          >建bug</el-button>
+<!--          <el-button-->
+<!--            size="mini"-->
+<!--            type="text"-->
+<!--            icon="el-icon-cpu"-->
+<!--            @click="toMakeBug(scope.row)"-->
+<!--            v-hasPermi="['system:productTest:remove']"-->
+<!--          >建bug</el-button>-->
         </template>
       </el-table-column>
     </el-table>
@@ -153,6 +177,8 @@
 
 <script>
 import { listProductTest, getProductTest, delProductTest, addProductTest, updateProductTest } from "@/api/system/productTest";
+import { listItem_set } from '@/api/system/item_set'
+import { listUser } from '@/api/system/user'
 
 export default {
   name: "ProductTest",
@@ -189,13 +215,26 @@ export default {
       form: {},
       // 表单校验
       rules: {
-      }
+      },
+      queryParamsItemSet:{},
+      item_setList:[],
+      queryParamsUserList:{},
+      userList:[],
     };
   },
   created() {
     this.getList();
+    this.getItemSet();
+    this.getUserList();
   },
   methods: {
+    /** 获取用户信息，用于创建产品时选择负责人和测试人 */
+    getUserList(){
+      listUser(this.queryParamsUserList).then(response => {
+          this.userList = response.rows;
+        }
+      );
+    },
     /** 查询产品测试列表 */
     getList() {
       this.loading = true;
@@ -204,6 +243,14 @@ export default {
         this.total = response.total;
         this.loading = false;
       });
+    },
+
+    /** 查询产品测试列表 */
+    getItemSet() {
+      listItem_set(this.queryParamsItemSet).then(response => {
+        this.item_setList = response.rows;
+      });
+
     },
 
     ToMakeStep(row){

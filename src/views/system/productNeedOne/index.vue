@@ -12,23 +12,23 @@
       <!--          />-->
       <!--        </el-select>-->
       <!--      </el-form-item>-->
-      <el-form-item label="所属产品" prop="requirementName">
+<!--      <el-form-item label="所属产品" prop="requirementName">-->
         <!--        <el-input-->
         <!--          v-model="queryParams.requirementName"-->
         <!--          placeholder="请输入所属产品"-->
         <!--          clearable-->
         <!--          @keyup.enter.native="handleQuery"-->
         <!--        />-->
-        <el-select v-model="queryParams.productRequirementId" placeholder="请选择">
-          <el-option
-            v-for="item in productList"
-            :key="item.productName"
-            :label="item.productName"
-            :value="item.productId">
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="所属计划" prop="requirementType">
+<!--        <el-select v-model="queryParams.productRequirementId" placeholder="请选择">-->
+<!--          <el-option-->
+<!--            v-for="item in productList"-->
+<!--            :key="item.productName"-->
+<!--            :label="item.productName"-->
+<!--            :value="item.productId">-->
+<!--          </el-option>-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
+      <el-form-item label="所属计划" prop="productPlanId">
         <!--        <el-select v-model="queryParams.requirementType" placeholder="请选择所属计划" clearable>-->
         <!--          <el-option-->
         <!--            v-for="dict in dict.type.requirement_type"-->
@@ -222,17 +222,17 @@
     <!-- 添加或修改研发需求对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="50vw" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="所属产品" prop="requirementName">
-          <!--          <el-input v-model="form.requirementName" placeholder="请输入需求名称" />-->
-          <el-select v-model="form.productId" placeholder="请选择所属产品">
-            <el-option
-              v-for="item in productList"
-              :key="item.productName"
-              :label="item.productName"
-              :value="item.productId">
-            </el-option>
-          </el-select>
-        </el-form-item>
+<!--        <el-form-item label="所属产品" prop="requirementName">-->
+<!--                    <el-input v-model="form.productId" placeholder="请输入需求名称" />-->
+<!--          <el-select v-model="form.productId" placeholder="请选择所属产品">-->
+<!--            <el-option-->
+<!--              v-for="item in product"-->
+<!--              :key="item.productId"-->
+<!--              :label="item.productName"-->
+<!--              :value="item.productId">-->
+<!--            </el-option>-->
+<!--          </el-select>-->
+<!--        </el-form-item>-->
         <el-form-item label="所属计划" prop="requirementName">
           <!--          <el-input v-model="form.requirementName" placeholder="请输入需求名称" />-->
           <el-select v-model="form.productPlanId" placeholder="请选择所属计划">
@@ -323,7 +323,7 @@
 
 <script>
 import { listRequirement, getRequirement, delRequirement, addRequirement, updateRequirement } from "@/api/system/requirement";
-import { listProduct } from '@/api/system/product'
+import { listProduct,getProduct } from '@/api/system/product'
 import { listPlan } from '@/api/system/plan'
 import { getInfo } from '@/api/login'
 import { listUser,getUser } from '@/api/system/user'
@@ -385,7 +385,8 @@ export default {
       form: {},
       // 表单校验
       rules: {
-      }
+      },
+      product:null,
     };
   },
   created() {
@@ -395,6 +396,7 @@ export default {
     this.getProductList();
     this.getPlan();
     this.getUserList();
+    this.getAProduct();
   },
   methods: {
     /** 查询研发需求列表 */
@@ -408,8 +410,16 @@ export default {
         this.loading = false;
       });
     },
+    getAProduct(){
+      getProduct(this.$route.params.proId).then(resp=>{
+        this.product = resp.data;
+        console.log("开始")
+        console.log(this.product.productId)
+      })
+    },
     /** 查询产品列表，创建需求用 */
     getProductList() {
+      this.queryParamsProductList.productId = this.$route.params.proId;
       listProduct(this.queryParamsProductList).then(response => {
         this.productList = response.rows;
       });
@@ -426,6 +436,7 @@ export default {
 
     /** 获取所有计划 */
     getPlan(){
+      this.queryParamsPlanList.productId = this.$route.params.proId;
       listPlan(this.queryParamsPlanList).then(response => {
         this.planList = response.rows;
       });
@@ -452,6 +463,7 @@ export default {
       getUser(this.designateForm.designateUserId).then(resp =>{
         this.designateForm.designateUserName = resp.data.nickName
         console.log(this.designateForm)
+        this.designateForm.status = 1
         updateRequirement(this.designateForm).then(response => {
           this.$modal.msgSuccess("指派成功！");
           this.designateDialog = false;
@@ -523,6 +535,7 @@ export default {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.productRequirementId != null) {
+            this.form.productId = this.product.productId
             updateRequirement(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
@@ -534,6 +547,8 @@ export default {
             getInfo().then(resp =>{
               this.form.createUserId = resp.user.userId
               this.form.createUserName = resp.user.nickName;
+              this.form.productId = this.product.productId
+              this.form.stage = 1;
               addRequirement(this.form).then(response => {
                 this.$modal.msgSuccess("新增成功");
                 this.open = false;

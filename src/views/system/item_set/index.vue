@@ -82,7 +82,7 @@
 <!--      <el-table-column label="项目集id" align="center" prop="itemSetId" />-->
       <el-table-column label="项目集名称" align="center" prop="itemSetName" />
       <el-table-column label="负责人姓名" align="center" prop="principalName" />
-      <el-table-column label="预算" align="center" prop="budget" />
+      <el-table-column label="预算(元)" align="center" prop="budget" />
       <el-table-column label="开始时间" align="center" prop="startTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}</span>
@@ -93,7 +93,11 @@
           <span>{{ parseTime(scope.row.endTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="state" />
+      <el-table-column label="状态" align="center" prop="state">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.item_set_state" :value="scope.row.state"/>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -103,6 +107,13 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:item_set:edit']"
           >修改</el-button>
+<!--          <el-button-->
+<!--            size="mini"-->
+<!--            type="text"-->
+<!--            icon="el-icon-switch-button"-->
+<!--            @click="closeItemSet(scope.row)"-->
+<!--            v-hasPermi="['system:item_set:edit']"-->
+<!--          >关闭</el-button>-->
           <el-button
             size="mini"
             type="text"
@@ -173,9 +184,11 @@
 <script>
 import { listItem_set, getItem_set, delItem_set, addItem_set, updateItem_set } from "@/api/system/item_set";
 import { listUser,getUser } from '@/api/system/user'
+import { listItem } from '@/api/system/item'
 
 export default {
   name: "Item_set",
+  dicts: ['item_set_state'],
   data() {
     return {
       // 遮罩层
@@ -220,7 +233,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-      }
+      },
+      queryParamsItemList:{},
+      itemList:[],
     };
   },
   created() {
@@ -228,6 +243,14 @@ export default {
     this.getList();
   },
   methods: {
+    /** 获取项目集下的项目状态，如果有项目开始了就是进行中 */
+    // getItemList(){
+    //   listItem(this.queryParamsItemList).then(response => {
+    //     this.itemList = response.rows;
+    //     console.log(this.itemList)
+    //   });
+    // },
+
     /** 查询项目集列表 */
     getList() {
       this.loading = true;
@@ -235,6 +258,26 @@ export default {
         this.item_setList = response.rows;
         this.total = response.total;
         this.loading = false;
+        for (let i = 0; i < this.item_setList.length; i++) {
+          this.queryParamsItemList.itemSetId = this.item_setList[i].itemSetId;
+          listItem(this.queryParamsItemList).then(response => {
+            this.itemList = response.rows;
+            var finishCount = 0
+            for (let j = 0; j < this.itemList.length; j++) {
+              //如果有开始的,但是没结束的，直接结束循环，状态为进行中
+              if (this.itemList[j].status==1){
+                this.item_setList[i].state = 1
+                break;
+              }
+              if (this.itemList[i].status == 2){
+                finishCount++;
+              }
+            }
+            if (finishCount==this.itemList.length&&finishCount!=0){
+              this.item_setList[i].state = 2;
+            }
+          });
+        }
       });
     },
 
@@ -246,6 +289,33 @@ export default {
         }
       );
     },
+    /** 关闭项目集用 */
+    // closeItemSet(row){
+    //   var flag = row.state;
+    //   if (flag!=2){
+    //
+    //   }
+    //   this.$confirm('此操作将关闭所选项目集, 是否继续?', '提示', {
+    //     confirmButtonText: '确定',
+    //     cancelButtonText: '取消',
+    //     type: 'warning'
+    //   }).then(() => {
+    //     this.form.itemSetId = row.itemSetId;
+    //     this.form.state = 2
+    //     updateItem_set(this.form).then(response => {
+    //       this.getList();
+    //     });
+    //     this.$message({
+    //       type: 'success',
+    //       message: '关闭项目集成功!'
+    //     });
+    //   }).catch(() => {
+    //     this.$message({
+    //       type: 'info',
+    //       message: '已取消关闭'
+    //     });
+    //   });
+    // },
     // 取消按钮
     cancel() {
       this.open = false;
@@ -313,7 +383,7 @@ export default {
             const userId = this.form.principalId;
             getUser(userId).then(resp =>{
               this.form.principalName = resp.data.nickName
-              this.form.state = 1;
+              this.form.state = 0;
               addItem_set(this.form).then(response => {
                 this.$modal.msgSuccess("新增成功");
                 this.open = false;
